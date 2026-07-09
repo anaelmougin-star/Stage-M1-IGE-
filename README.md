@@ -1,5 +1,7 @@
 # Notebooks finaux du stage de Master 1 portant sur les couvertures de neige dans les Alpes (et au Pamir) 
 
+Ce travail est le regroupement de l'ensemble de mes fiigures utilent pour mon stage de M1 STPE SCAHC a l'UGA (sous Gricad).
+
 L'ensemble des données utilisées sont disponibles soit sur /bettik/PROJECTS/pr-regional-climate/mougina/ 
 
 ou sur /home/mougina/mes_analyses_neige/
