@@ -1,4 +1,5 @@
 # Stage-M1-IGE-
+Tout d'abord les notebooks  les plus importants sont tous dans la branche notebooks-finaux ce refer au read me qui s'y trouve pour les informations.
 Voici les notebooks que j'ai ecrit durant mon stage de M1 sur les couvertures neigeuses dans les Alpes, le travail a ete realise sous dahu (Gricad, universite Grenoble Alpes) ou l'ensemble des documents utilise sont disponibles sur bettik.
 
  Les notebooks "Comparaison..." ont pour de comparer differentes banques de donnees SNOW-CCI. 
