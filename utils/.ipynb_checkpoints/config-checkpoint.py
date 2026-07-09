@@ -1,0 +1,125 @@
+# /home/mougina/mes_analyses_neige/config.py
+
+import scipy.ndimage as ndi
+import numpy as np
+import xarray as xr
+
+ds_grid = xr.open_dataset("/bettik/castelli/data/MAR-ERA5/MAR3.14/EUo/MARgrid_EUo.nc")
+
+lon = np.array(ds_grid.LON)
+lat = np.array(ds_grid.LAT)
+H = np.array(ds_grid.SH)
+
+def detect_alps(H):
+    nlat, nlon = np.shape(H)
+    mask = np.bool_(np.zeros((nlat, nlon)))
+    r = 4
+    for j in range(r, nlat-r):
+        for i in range(r, nlon-r):
+            mask[j,i] = np.logical_and(H[j,i]>360, np.any(H[j-r:j+r, i-r:i+r]>1300))
+    return mask
+
+alps = detect_alps(H)
+alps[lon<4.8] = False
+alps[np.logical_and(lon>10, lat<45.2)] = False
+alps = ndi.binary_fill_holes(alps)
+
+
+def detect_alps_with_ice_mask(H):
+    nlat, nlon = np.shape(H)
+    mask = np.bool_(np.zeros((nlat, nlon)))
+    r = 4
+    for j in range(r, nlat-r):
+        for i in range(r, nlon-r):
+            mask[j,i] = np.logical_and(H[j,i]>360, np.any(H[j-r:j+r, i-r:i+r]>1300))
+    return mask
+
+alps_ice = detect_alps_with_ice_mask(H)
+alps_ice[lon<4.8] = False
+alps_ice[np.logical_and(lon>10, lat<45.2)] = False
+alps_ice = ndi.binary_fill_holes(alps_ice)
+
+# Masque glacier depuis V4
+ds_v4_ref = xr.open_dataset("/bettik/PROJECTS/pr-regional-climate/mougina/data_v4_GF_alps/SCFG_Alps_2018.nc", decode_cf=False)
+for v in ds_v4_ref.variables:
+    if 'dtype' in ds_v4_ref[v].attrs:
+        del ds_v4_ref[v].attrs['dtype']
+ds_v4_ref = xr.decode_cf(ds_v4_ref)
+is_ice = (ds_v4_ref['scfg'] == 215).any(dim='time').astype(float)  
+is_ice_regrid = is_ice.interp(lon=ds_grid.LON, lat=ds_grid.LAT, method="nearest").astype(bool)
+alps_ice[is_ice_regrid.values] = False
+
+
+
+#fonction saison
+
+def get_season(t):
+    if t.month in [12, 1, 2]:
+        return f"{t.year + 1}_DJF" if t.month == 12 else f"{t.year}_DJF"
+    elif t.month in [3, 4, 5]:
+        return f"{t.year}_MAM"
+    elif t.month in [6, 7, 8]:
+        return f"{t.year}_JJA"
+    elif t.month in [9, 10, 11]:
+        return f"{t.year}_SON"
+
+### fonction Pamir
+
+ds_grid_pamir = xr.open_dataset("/bettik/PROJECTS/pr-regional-climate/mougina/grille_MAR_Pamir/NST.2014.01.01.00.GRi.nc")
+lon_pamir = np.array(ds_grid_pamir.LON)
+lat_pamir = np.array(ds_grid_pamir.LAT)
+H_pamir = np.array(ds_grid_pamir.SH)
+
+lon1_pamir, lon2_pamir = 67, 78
+lat1_pamir, lat2_pamir = 35, 42
+
+# Domaine valide (déjà recoupé sur le massif)
+def detect_pamir(H, alt_min=0):
+    return H > alt_min
+
+pamir = detect_pamir(H_pamir, alt_min=0)
+
+# Masque glacier natif MAR (ICE = % couverture glace dans la grille)
+seuil_ice = 50  # % à partir duquel le pixel est considéré "glacier" — ajustable
+ice_pamir_native = np.array(ds_grid_pamir['ICE'])
+pamir_ice_mask = ice_pamir_native > seuil_ice
+
+# pamir_ice = domaine valide MOINS les pixels glacier (même convention que avant)
+pamir_ice = pamir.copy()
+pamir_ice[pamir_ice_mask] = False
+
+def detect_pamir_advanced(H, h_min=1500, h_pic=4500, r=4):
+    nlat, nlon = np.shape(H)
+    mask = np.zeros((nlat, nlon), dtype=bool)
+    
+    # Boucle glissante : connectivité avec la haute montagne
+    for j in range(r, nlat - r):
+        for i in range(r, nlon - r):
+            mask[j, i] = np.logical_and(
+                H[j, i] > h_min, 
+                np.any(H[j-r:j+r, i-r:i+r] > h_pic)
+            )
+    return mask
+
+# --- 2. APPLICATION ET NETTOYAGE ---
+# On génère le masque topographique de base
+pamir = detect_pamir_advanced(H_pamir, h_min=1500, h_pic=4500, r=4)
+
+# On applique tes limites de boîte pour éliminer les massifs voisins (Hindou Kouch, Tien Shan trop lointains)
+pamir[lon_pamir < lon1_pamir] = False
+pamir[lon_pamir > lon2_pamir] = False
+pamir[lat_pamir < lat1_pamir] = False
+pamir[lat_pamir > lat2_pamir] = False
+
+# On bouche les grands lacs d'altitude (comme le lac Karakul)
+pamir = ndi.binary_fill_holes(pamir)
+
+# --- 3. EXCLUSION DES GLACIERS PERPÉTUELS ---
+# 'ICE' dans la grille MAR donne le pourcentage de glace perpétuelle par pixel
+ice_pamir_native = np.array(ds_grid_pamir['ICE'])
+seuil_ice = 50  # Seuil à 50% de couverture de glace
+pamir_ice_mask = ice_pamir_native > seuil_ice
+
+# pamir_final = Notre domaine d'étude (Massif du Pamir hors glaciers permanents)
+pamir_final = pamir.copy()
+pamir_final[pamir_ice_mask] = False
