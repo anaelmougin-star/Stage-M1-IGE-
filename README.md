@@ -1,5 +1,7 @@
 # Notebooks finaux du stage de Master 1 portant sur les couvertures de neige dans les Alpes (et au Pamir) 
 
+Ce travail est le regroupement de l'ensemble de mes figures utiles pour mon stage de M1 STPE SCAHC a l'UGA (sous Gricad). Avec pour superviseurs Vincent Peyaud et Martin Ménégoz.
+
 L'ensemble des données utilisées sont disponibles soit sur /bettik/PROJECTS/pr-regional-climate/mougina/ 
 
 ou sur /home/mougina/mes_analyses_neige/
@@ -11,7 +13,7 @@ et pour les modèles : /bettik/castelli/data/MAR-ERA5/MAR3.14/EUo/daily/  et /be
 Tout cela depuis le cluster Dahu ou, pour ce qui est sur bettik, aussi Kraken (kcpu) (GRICAD).
 
 
-Dans ces notebooks, j'utilise les données SNOW-CCI V4 gap-filled par l'ESA, ainsi que les données V2 et V4 sans gap-filling et, enfin, les données V2 gap-filled par Mickaël Lalande.
+Dans ces notebooks, j'utilise les données SNOW-CCI V4 gap-filled par l'ESA, ainsi que les données V2 et V4 sans gap-filling et, enfin, les données V2 gap-filled par Mickaël Lalande et al. (2023).
 De plus, l'objectif étant de réaliser une comparaison pour les Alpes comme pour le Pamir, j'utilise MAR forcé par la réanalyse ERA5 car le stage s'est fait avec seulement 5 ans de données V4 gap-filled (référence) ; ces simulations m'ont été données 
 par Maria Santolaria (Pamir) et Ian Castellanos (Alpes). 
 
@@ -19,6 +21,8 @@ Le notebook "Figure M1 avant correction" utilise toutes ces données afin de plo
 
 Ensuite, les notebooks "Corrections" suivent une structure similaire, n'utilisant que les données V4 gap-filled et MAR ERA5 dans le but de corriger ce dernier modèle de plusieurs manières. Attention, ces notebooks sont organisés en deux parties 
 dépendant toutes deux de la première ouverture des fichiers, mais il n'est pas possible de faire tourner les deux à la suite car pour la vérification de la correction (cross-validation) il nous faut 2016-2019, alors que pour l'application, il faut 2016-2021 ;
-donc il faut changer au besoin. Sinon, ces trois notebooks... 
+donc il faut changer au besoin.Les techniques de corrections sont une simple corrections avec les moyennes mensuelles(glissantes) et les technique de quantile mapping simple (SQM) et surtout le delta quantile mapping (QDM) de Clauzel et al. (2023).
 
 Enfin, le notebook "Figure analyse Pamir" a pour but de faire la même chose que les notebooks précédents mais sans cross-validation, donc pas de problème comme pour les corrections alpines ; il suit les mêmes étapes, mais avec beaucoup moins de présentation et une seule correction simple.
+
+Le code "config.py" contient plusieurs fonctions notamment pour permettre de définir les zones Alpes et Pamir, pour les Alpes c'est simplement celle de Ian Castellanos et al. (2026) avec un mask ice et pour le Pamir fonctionnment identique mais avec d'autres valeurs d'altitudes. Il y a aussi un fonction permettant la bonne séléction des saisons notamment l'hiver (probleme décembre de l'année précédente).
